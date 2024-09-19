@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model bank {
+  idbank   Int    @id @default(autoincrement())
+  namebank String @unique(map: "namebank") @db.VarChar(20)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cashflow {
+  idcashflow         Int       @id @default(autoincrement())
+  fk_idcompany       Int?
+  idchartaccounts    Int?
+  fk_idcustomer      Int?
+  customer_phone     String?   @db.VarChar(20)
+  fk_idtypeproduct   Int?
+  fk_idproduct       Int?
+  fk_idbankmaster    Int?
+  fk_idbankclient    Int?
+  fk_idchartaccounts Int?
+  dtcashflow         DateTime? @db.Date
+  tchaflow           DateTime? @db.Time(0)
+  amountflow         Float?
+  valueflow          Float?    @default(0.00)
+  valuewire          Float?    @default(0.00)
+  centsflow          Float?    @default(0.00)
+  cents2flow         Float?    @default(0.00)
+  check_number       String?   @db.VarChar(20)
+  percentflow        Float?    @default(0.00)
+  valuepercentflow   Float?    @default(0.00)
+  airpercentflow     Float?    @default(0.00)
+  aircomisvalue      Float?    @default(0.00)
+  airreservation     String?   @db.Text
+  airdtemiuntil      DateTime? @db.Date
+  totalflow          Float?    @default(0.00)
+  movetype           String?   @db.VarChar(1)
+  totaltopay         Float?    @default(0.00)
+  cashflowok         String?   @db.VarChar(1)
+  cashflowobs        String?   @db.TinyText
+  cashfloworigin     Int?
+  wire               String?   @db.Char(3)
+  subtotalflow       Decimal?  @db.Decimal(10, 2)
+  idlogin            String?   @db.VarChar(40)
+  vin                String?   @db.VarChar(40)
+  fk_idcountry       Int?      @db.UnsignedInt
+  fk_idmaker         Int?      @db.UnsignedInt
+  year               String?   @db.Char(4)
+  model              String?   @db.VarChar(20)
+  fk_idcoverage      Int?      @db.UnsignedInt
+  description        String?   @db.VarChar(100)
+  fk_idstatus        Int
+  fk_idstore         Int
+
+  @@index([fk_idbankclient], map: "fk_idbank")
+  @@index([fk_idbankmaster], map: "fk_idbankmaster")
+  @@index([fk_idtypeproduct], map: "fk_idproduto")
+  @@index([fk_idtypeproduct], map: "fk_idtypeproduct_idx")
+  @@index([fk_idcustomer], map: "idcustomer")
+}
+
+model chartaccounts {
+  idchartaccounts   Int     @id @default(autoincrement())
+  namechartaccounts String? @db.VarChar(40)
+  io                String? @db.VarChar(1)
+}
+
+model city {
+  idcity    Int     @id @default(autoincrement()) @db.UnsignedInt
+  name_city String? @db.VarChar(40)
+}
+
+model classcustomer {
+  idclasscustomer Int      @id @default(autoincrement())
+  description     String?  @db.VarChar(20)
+  seeincompany    Boolean?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model conta_importada {
+  idconta   Int
+  idempresa Int
+  data      DateTime @db.Date
+  codigo    String   @db.Text
+  tipo      String   @db.VarChar(3)
+  valor     Decimal  @db.Decimal(12, 2)
+  descricao String   @db.Text
+
+  @@ignore
+}
+
+model country {
+  idcountry   Int    @id @default(autoincrement())
+  namecountry String @db.VarChar(20)
+}
+
+model coverage {
+  idcoverage   Int     @id @default(autoincrement())
+  namecoverage String? @db.VarChar(20)
+}
+
+model customer {
+  idcustomer          Int       @id @default(autoincrement())
+  fk_idcity           Int?      @db.UnsignedInt
+  fk_ididentification Int?
+  fk_idcustomer       Int?
+  fk_idclasscustomer  Int?
+  fk_idcountry        Int
+  typecustomer        Int?
+  name                String    @db.VarChar(40)
+  andress             String?   @db.VarChar(100)
+  phone               String?   @db.VarChar(20)
+  phone2              String?   @db.VarChar(20)
+  zipcode             String?   @db.VarChar(20)
+  city                String?   @db.VarChar(40)
+  state               String?   @db.VarChar(40)
+  email               String?   @db.VarChar(100)
+  dtbirth             DateTime? @db.Date
+  numidentification   String?   @db.VarChar(50)
+  comissionpercent    Float?    @default(0.00)
+  attention           String?   @db.Char(250)
+  picture_path        String?   @db.VarChar(200)
+  active              String?   @db.Char(1)
+  restriction         Boolean?
+  createAt            DateTime  @default(now()) @db.DateTime(0)
+  updateAt            DateTime  @default(now()) @db.DateTime(0)
+
+  @@index([fk_idcity], map: "customer_FKIndex4")
+  @@index([fk_idclasscustomer], map: "fk_idclasscustomer")
+  @@index([fk_idcustomer], map: "fk_idcustomer")
+  @@index([fk_ididentification], map: "fk_ididentification")
+  @@index([name], map: "name")
+  @@index([phone], map: "phone")
+}
+
+model customers {
+  id        Int    @id @default(autoincrement())
+  name      String @db.VarChar(40)
+  email     String @unique(map: "email") @db.VarChar(100)
+  image_url String @unique(map: "image_url") @db.VarChar(100)
+}
+
+model identification {
+  ididentification   Int     @id @default(autoincrement())
+  nameidentification String? @db.VarChar(100)
+}
+
+model invoices {
+  customer_id Int
+  amount      Decimal  @db.Decimal(10, 0)
+  status      String   @db.VarChar(20)
+  date        DateTime @db.Date
+  id          Int      @id @default(autoincrement())
+}
+
+model licensecountry {
+  idlicense   Int     @id @default(autoincrement())
+  namelicense String? @db.VarChar(40)
+}
+
+model login {
+  idlogin Int     @id @default(autoincrement()) @db.UnsignedInt
+  login   String  @unique(map: "login") @db.VarChar(40)
+  senha   String? @db.VarChar(80)
+  nome    String? @db.VarChar(40)
+  email   String? @db.VarChar(40)
+  perfil  String? @db.Char(1)
+  active  String? @db.Char(1)
+}
+
+model maker {
+  idmaker   Int    @id @default(autoincrement())
+  namemaker String @db.VarChar(30)
+}
+
+model menu_options {
+  idmenu_options   Int     @id @default(autoincrement()) @db.UnsignedInt
+  menu             String? @db.VarChar(40)
+  menu_description String? @db.VarChar(40)
+  path             String? @db.VarChar(80)
+  sub_menu         String? @db.VarChar(40)
+  seq              Int?    @db.UnsignedInt
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model parameters {
+  id_parameter       Int      @id @db.UnsignedInt
+  client             String?  @db.VarChar(80)
+  exchange_vl_month  Decimal? @db.Decimal(12, 2)
+  exchange_vl_year   Decimal? @db.Decimal(12, 2)
+  exchange_vl_wire   Decimal? @db.Decimal(12, 2)
+  exchange_comission Decimal? @db.Decimal(12, 2)
+  fk_idclient        Int?
+}
+
+model percentcheck {
+  idpercentcheck  Int    @id @default(autoincrement())
+  formula         String @db.VarChar(100)
+  valuereturn     Float
+  valuereturntype String @db.VarChar(1)
+}
+
+model product {
+  idproduct        Int     @id @default(autoincrement())
+  fk_idtypeproduct Int?
+  nameproduct      String? @db.VarChar(50)
+  amountproduct    Float?
+  productvalue     Float   @default(0.00)
+  percentcomis     Float   @default(0.00)
+  percentchq       Float   @default(0.00)
+  rule             Int     @default(3)
+  movetype         String? @db.VarChar(1)
+
+  @@index([fk_idtypeproduct], map: "fk_idtypeproduct")
+}
+
+model status {
+  idstatus    Int     @id @unique(map: "idstatus") @default(autoincrement())
+  description String  @unique(map: "description") @db.VarChar(20)
+  emphasis    Boolean @default(false)
+}
+
+model store {
+  idstore Int    @id @default(autoincrement())
+  nmstore String @db.VarChar(100)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model storeip {
+  idstore Int
+  ipstore String @db.VarChar(100)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model teste {
+  hora DateTime @db.Time(0)
+
+  @@ignore
+}
+
+model typeproduct {
+  idtypeproduct   Int     @id
+  nametypeproduct String? @db.VarChar(50)
+}
+
+model users {
+  id       Int    @id @default(autoincrement())
+  name     String @db.VarChar(40)
+  email    String @unique(map: "email") @db.VarChar(100)
+  password String @db.VarChar(60)
+}
+
+model wiredetail {
+  wire_id       Int    @id @default(autoincrement())
+  fk_idcashflow Int?
+  fk_idcountry  Int?
+  qtdwire       Float?
+}
