@@ -14,3 +14,4 @@ export default async function getCustomers() {
         await prisma.$disconnect(); // Desconectar do Prisma após a consulta
     }
 }
+//xxxx
