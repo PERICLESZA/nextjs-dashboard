@@ -24,8 +24,19 @@ export const formatDateToLocal = (
 export const generateYAxis = (revenue: Revenue[]) => {
   // Calculate what labels we need to display on the y-axis
   // based on highest record and in 1000s
+  if (!Array.isArray(revenue)) {
+    // console.error("Invalid revenue data:", revenue);
+    return { yAxisLabels: [], topLabel: 0 };
+  }
+  const validRevenue = revenue.filter((month) => month && typeof month.revenue === 'number');
+  // console.log(validRevenue)
   const yAxisLabels = [];
-  const highestRecord = Math.max(...revenue.map((month) => month.revenue));
+  // const highestRecord = Math.max(...revenue.map((month) => month.revenue));
+  const highestRecord = Math.max(
+    ...revenue
+      .filter((month) => month && typeof month.revenue === 'number') // Filtra elementos válidos
+      .map((month) => month.revenue)
+  );
   const topLabel = Math.ceil(highestRecord / 1000) * 1000;
 
   for (let i = topLabel; i >= 0; i -= 1000) {

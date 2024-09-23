@@ -143,6 +143,7 @@ model customers {
   name      String @db.VarChar(40)
   email     String @unique(map: "email") @db.VarChar(100)
   image_url String @unique(map: "image_url") @db.VarChar(100)
+  invoices  invoices[] // Relacionamento com invoices
 }
 
 model identification {
@@ -156,6 +157,7 @@ model invoices {
   status      String   @db.VarChar(20)
   date        DateTime @db.Date
   id          Int      @id @default(autoincrement())
+  customer    customers @relation(fields: [customer_id], references: [id])
 }
 
 model licensecountry {
@@ -217,6 +219,11 @@ model product {
   movetype         String? @db.VarChar(1)
 
   @@index([fk_idtypeproduct], map: "fk_idtypeproduct")
+}
+
+model revenue {
+  month   String @unique(map: "month") @db.VarChar(3)
+  revenue Int
 }
 
 model status {
