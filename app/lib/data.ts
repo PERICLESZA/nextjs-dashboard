@@ -84,73 +84,79 @@ export async function fetchCardData() {
 
 const ITEMS_PER_PAGE = 6;
 
+// Definindo o tipo de retorno da função
+type InvoiceWithCustomer = {
+  id: number;
+  amount: number;
+  status: string;
+  date: Date;
+  name: string;
+  email: string;
+  image_url: string;
+};
+
 export async function fetchFilteredInvoices(query: string, currentPage: number) {
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
-  try {
-    const invoices = await prisma.invoices.findMany({
-      where: {
-        OR: [
-          {
-            customer: {
-              name: {
-                contains: query,
-                mode: 'insensitive',
-              },
-            },
-          },
-          {
-            customer: {
-              email: {
-                contains: query,
-                mode: 'insensitive',
-              },
-            },
-          },
-          {
-            amount: {
-              equals: isNaN(parseInt(query)) ? undefined : parseInt(query),
-            },
-          },
-        ],
-      },
-      include: {
-        customer: true,
-      },
-      skip: offset,
-      take: ITEMS_PER_PAGE,
-      orderBy: {
-        date: 'desc',
-      },
-    });
+  // Preparação do filtro SQL
+  const filterCondition = query
+    ? `%${query}%`
+    : '%';
 
-    return invoices;
+  try {
+    // Consulta SQL personalizada
+    const invoices = await prisma.$queryRaw<InvoiceWithCustomer[]>`
+      SELECT 
+        i.id, i.amount, i.status, i.date,
+        c.name AS name, c.image_url AS image_url,   c.email As email
+      FROM invoices i
+      LEFT JOIN customers c ON i.customer_id = c.id
+      WHERE 
+        c.name LIKE ${filterCondition}
+        OR c.email LIKE ${filterCondition}
+        OR (i.amount = ${isNaN(Number(query)) ? 0 : Number(query)} AND ${!isNaN(Number(query))})
+      ORDER BY i.date DESC
+      LIMIT ${ITEMS_PER_PAGE}
+      OFFSET ${offset};
+    `;
+
+return invoices;
+
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoices.');
   }
 }
 
-
 export async function fetchInvoicesPages(query: string) {
   try {
-    const count = await prisma.invoices.count({
-      where: {
-        OR: [
-          { customer: { name: { contains: query, mode: 'insensitive' } } },
-          { customer: { email: { contains: query, mode: 'insensitive' } } },
-          { amount: { equals: parseInt(query) || undefined } },
-        ],
-      },
-    });
 
-    const totalPages = Math.ceil(count / ITEMS_PER_PAGE);
+    // Preparação do filtro SQL
+    const filterCondition = query ? `%${query}%` : '%';
+
+    // Consulta para obter a contagem total de registros
+    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) AS count
+      FROM invoices i
+      LEFT JOIN customers c ON i.customer_id = c.id
+      WHERE 
+        c.name LIKE ${filterCondition}
+        OR c.email LIKE ${filterCondition}
+        OR (i.amount = ${isNaN(Number(query)) ? 0 : Number(query)} AND ${!isNaN(Number(query))})
+    `;
+    // Pegando a contagem de registros
+    const totalRecords = Number(countResult[0].count);
+
+    // Calculando o número total de páginas
+    const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+
     return totalPages;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of invoices.');
   }
 }
+
 
 export async function fetchInvoiceById(id: string) {
   try {
