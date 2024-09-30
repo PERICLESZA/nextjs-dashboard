@@ -23,14 +23,20 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
   try {
-    // Busca as 5 faturas mais recentes, incluindo os dados do cliente
-    const latestInvoices = await prisma.invoices.findMany({
-      orderBy: { date: 'desc', // Ordena pela data mais recente
-      },
-      take: 5, // Limita a busca às 5 faturas mais recentes
-      include: { customer: true, // Inclui os dados do cliente relacionado
-      },
-    });
+    // Consulta SQL para buscar as 5 faturas mais recentes, incluindo os dados do cliente
+    // const invoices    = await prisma.$queryRaw<InvoiceWithCustomer[]>`
+    const latestInvoices = await prisma.$queryRaw<InvoiceWithCustomer[]>`
+      SELECT 
+        i.id, 
+        i.amount, 
+        c.name, 
+        c.email, 
+        c.image_url 
+      FROM invoices i
+      INNER JOIN customers c ON i.customer_id = c.id
+      ORDER BY i.date DESC
+      LIMIT 5;
+    `;
 
     if (latestInvoices.length === 0) {
       throw new Error('No invoices found.');
@@ -38,11 +44,11 @@ export async function fetchLatestInvoices() {
 
     // Formata o resultado para retornar um array de faturas
     return latestInvoices.map(invoice => ({
-      id: invoice.id.toString(),
-      amount: invoice.amount.toString(), // Converte Decimal para String
-      name: invoice.customer.name,
-      email: invoice.customer.email,
-      image_url: invoice.customer.image_url,
+      id: invoice.id,
+      amount: Number(invoice.amount), // Converte Decimal para String se necessário
+      name: invoice.name,
+      email: invoice.email,
+      image_url: invoice.image_url,
     }));
   } catch (error) {
     console.error('Database Error:', error);
@@ -107,8 +113,13 @@ export async function fetchFilteredInvoices(query: string, currentPage: number) 
     // Consulta SQL personalizada
     const invoices = await prisma.$queryRaw<InvoiceWithCustomer[]>`
       SELECT 
-        i.id, i.amount, i.status, i.date,
-        c.name AS name, c.image_url AS image_url,   c.email As email
+        i.id, 
+        i.amount, 
+        i.status, 
+        i.date,
+        c.name AS name, 
+        c.image_url AS image_url,   
+        c.email As email
       FROM invoices i
       LEFT JOIN customers c ON i.customer_id = c.id
       WHERE 
@@ -119,7 +130,7 @@ export async function fetchFilteredInvoices(query: string, currentPage: number) 
       LIMIT ${ITEMS_PER_PAGE}
       OFFSET ${offset};
     `;
-
+    //  console.log(invoices)
 return invoices;
 
   } catch (error) {
@@ -157,10 +168,9 @@ export async function fetchInvoicesPages(query: string) {
   }
 }
 
-
-export async function fetchInvoiceById(id: string) {
+export async function fetchInvoiceById(id: number) {
   try {
-    const invoice = await prisma.invoice.findUnique({
+    const invoice = await prisma.invoices.findUnique({
       where: { id: Number(id) },
       include: {
         customer: true,
@@ -173,7 +183,7 @@ export async function fetchInvoiceById(id: string) {
 
     return {
       ...invoice,
-      amount: invoice.amount / 100, // Convert amount from cents to dollars
+      amount: invoice.amount.toNumber(), // Convert amount from cents to dollars
     };
   } catch (error) {
     console.error('Database Error:', error);
@@ -183,7 +193,7 @@ export async function fetchInvoiceById(id: string) {
 
 export async function fetchCustomers() {
   try {
-    const customers = await prisma.customer.findMany({
+    const customers = await prisma.customers.findMany({
       orderBy: {
         name: 'asc',
       },
@@ -195,41 +205,39 @@ export async function fetchCustomers() {
   }
 }
 
+
+type CustomerWithTotals = {
+  id: number;
+  name: string;
+  email: string;
+  total_pending: number | null;
+  total_paid: number | null;
+};
+
 export async function fetchFilteredCustomers(query: string) {
   try {
-    const customers = await prisma.customer.findMany({
-      where: {
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-        ],
-      },
-      include: {
-        invoices: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
-
-    const customersData = customers.map((customer) => {
-      const totalPending = customer.invoices
-        .filter((invoice) => invoice.status === 'pending')
-        .reduce((sum, invoice) => sum + invoice.amount, 0);
-      const totalPaid = customer.invoices
-        .filter((invoice) => invoice.status === 'paid')
-        .reduce((sum, invoice) => sum + invoice.amount, 0);
-
-      return {
+    const customers = await prisma.$queryRaw<CustomerWithTotals[]>`
+      SELECT c.id, c.name, c.email,
+             COALESCE(SUM(CASE WHEN i.status = 'pending' THEN i.amount ELSE 0 END), 0) AS total_pending,
+             COALESCE(SUM(CASE WHEN i.status = 'paid' THEN i.amount ELSE 0 END), 0) AS total_paid
+      FROM customers c
+      LEFT JOIN invoices i ON c.id = i.customer_id
+      WHERE LOWER(c.name) LIKE ${`%${query.toLowerCase()}%`} 
+         OR LOWER(c.email) LIKE ${`%${query.toLowerCase()}%`}
+      GROUP BY c.id
+      ORDER BY c.name ASC;
+    `;
+      // Formatando os valores de total_pending e total_paid
+      const customersData = customers.map((customer) => ({
         ...customer,
-        total_pending: formatCurrency(totalPending),
-        total_paid: formatCurrency(totalPaid),
-      };
-    });
+        total_pending: formatCurrency(customer.total_pending || 0),
+        total_paid: formatCurrency(customer.total_paid || 0),
+      }));
 
-    return customersData;
-  } catch (err) {
-    console.error('Database Error:', err);
-    throw new Error('Failed to fetch customer table.');
+      return customersData;
+      } catch (err) {
+      console.error('Database Error:', err);
+      throw new Error('Failed to fetch customer table.');
   }
 }
+ 

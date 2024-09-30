@@ -153,10 +153,10 @@ model identification {
 
 model invoices {
   customer_id Int
-  amount      Decimal  @db.Decimal(10, 0)
-  status      String   @db.VarChar(20)
-  date        DateTime @db.Date
-  id          Int      @id @default(autoincrement())
+  amount      Decimal   @default(0.00)
+  status      String    @db.VarChar(20)
+  date        DateTime  @db.Date
+  id          Int       @id @default(autoincrement())
   customer    customers @relation(fields: [customer_id], references: [id])
 }
 
