@@ -131,8 +131,14 @@ export async function fetchFilteredInvoices(query: string, currentPage: number) 
       OFFSET ${offset};
     `;
     //  console.log(invoices)
-return invoices;
+   
+    // Mapeamento de status para garantir que seja "pending" ou "paid"
+   const mappedInvoices = invoices.map(invoice => ({
+    ...invoice,
+    status: invoice.status === 'pending' || invoice.status === 'paid' ? invoice.status : 'pending', // Ajuste conforme necessário
+  }));
 
+  return mappedInvoices;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoices.');
@@ -183,7 +189,8 @@ export async function fetchInvoiceById(id: number) {
 
     return {
       ...invoice,
-      amount: invoice.amount.toNumber(), // Convert amount from cents to dollars
+      amount: invoice.amount.toNumber(),
+      status: invoice.status === 'pending' || invoice.status === 'paid' ? invoice.status : 'pending', // Mapear status // Convert amount from cents to dollars
     };
   } catch (error) {
     console.error('Database Error:', error);
@@ -235,6 +242,7 @@ export async function fetchFilteredCustomers(query: string) {
       }));
 
       return customersData;
+      
       } catch (err) {
       console.error('Database Error:', err);
       throw new Error('Failed to fetch customer table.');
