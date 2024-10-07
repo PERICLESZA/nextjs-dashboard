@@ -138,7 +138,9 @@ export async function fetchFilteredInvoices(query: string, currentPage: number) 
     status: invoice.status === 'pending' || invoice.status === 'paid' ? invoice.status : 'pending', // Ajuste conforme necessário
   }));
 
+   console.log("pippoca ==>> " + mappedInvoices) 
   return mappedInvoices;
+
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoices.');
