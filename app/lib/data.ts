@@ -6,15 +6,15 @@ const prisma = new PrismaClient();
 export async function fetchRevenue() {
   try {
 
-    // console.log('Fetching revenue data...');
-    // await new Promise((resolve) => setTimeout(resolve, 5000));
+    const response = await prisma.revenue.findMany();
+    
+    if (!response) {
+      throw new Error('Failed to fetch revenue data.');
+    }
+    
+    // console.log(response)
+    return response;
 
-    const data = await prisma.revenue.findMany();
-
-    // console.log('Fetched revenue data:', data); // Verifique a estrutura dos dados aqui
-    // console.log('Data hetch completed after 5 seconds.')  
-
-    return data;
   } catch (error) {
     // console.error('Database Error:', error);
     throw new Error('Failed to fetch revenue data.');
@@ -69,12 +69,8 @@ export async function fetchCardData() {
       }),
     ]);
 
-    const totalPaidInvoices = formatCurrency(
-      invoiceStatus.find((s) => s.status === 'paid')?._sum.amount?.toNumber() || 0
-    );
-    const totalPendingInvoices = formatCurrency(
-      invoiceStatus.find((s) => s.status === 'pending')?._sum.amount?.toNumber() || 0
-    );
+    const totalPaidInvoices = invoiceStatus.find((s) => s.status === 'paid')?._sum.amount?.toNumber() || 0;
+    const totalPendingInvoices = invoiceStatus.find((s) => s.status === 'pending')?._sum.amount?.toNumber() || 0;
 
     return {
       numberOfInvoices: invoiceCount,
@@ -138,7 +134,7 @@ export async function fetchFilteredInvoices(query: string, currentPage: number) 
     status: invoice.status === 'pending' || invoice.status === 'paid' ? invoice.status : 'pending', // Ajuste conforme necessário
   }));
 
-   console.log("pippoca ==>> " + mappedInvoices) 
+  //  console.log("pippoca ==>> " + mappedInvoices) 
   return mappedInvoices;
 
   } catch (error) {

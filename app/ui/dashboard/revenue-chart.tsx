@@ -1,26 +1,23 @@
 import { generateYAxis } from '@/app/lib/utils';
 import { CalendarIcon } from '@heroicons/react/24/outline';
 import { lusitana } from '@/app/ui/fonts';
-import { Revenue } from '@/app/lib/definitions';
 import { fetchRevenue } from '@/app/lib/data';
 
-// This component is representational only.
-// For data visualization UI, check out:
-// https://www.tremor.so/
-// https://www.chartjs.org/
-// https://airbnb.io/visx/
+interface RevenueChartProps {
+  revenueData: any[]; // Defina o tipo correto para `revenueData`
+}
 
-export default async function RevenueChart() {
+export default function RevenueChart({ revenueData }: RevenueChartProps) {
   
-  const revenue = await fetchRevenue();
+  // const revenue = await fetchRevenue();
   const chartHeight = 350;
-  // NOTE: Uncomment this code in Chapter 7
+  // // NOTE: Uncomment this code in Chapter 7
 
-  const { yAxisLabels, topLabel } = generateYAxis(revenue);
+   if (!revenueData || revenueData.length === 0) {
+     return <p className="mt-4 text-gray-400">No data available.</p>;
+   }
 
-  if (!revenue || revenue.length === 0) {
-    return <p className="mt-4 text-gray-400">No data available.</p>;
-  }
+   const { yAxisLabels, topLabel } = generateYAxis(revenueData);
 
   return (
     <div className="w-full md:col-span-4">
@@ -40,7 +37,7 @@ export default async function RevenueChart() {
             ))}
           </div>
 
-          {revenue.map((month) => (
+          {revenueData.map((month) => (
             <div key={month.month} className="flex flex-col items-center gap-2">
               <div
                 className="w-full rounded-md bg-blue-300"
