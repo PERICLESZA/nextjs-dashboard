@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { formatCurrency } from './utils';
+import { Customer } from '@/app/lib/definitions'
 
 const prisma = new PrismaClient();
 
@@ -143,6 +144,45 @@ export async function fetchFilteredInvoices(query: string, currentPage: number) 
   }
 }
 
+// Definindo o tipo de retorno da função
+type WithCustomer = {
+  id: number;
+  name: string;
+  email: string;
+  image_url: string;
+};
+
+export async function fetchFilteredCustomer(query: string, currentPage: number) {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  // Preparação do filtro SQL
+  const filterCondition = query
+    ? `%${query}%`
+    : '%';
+
+  try {
+    // Consulta SQL personalizada
+    const customers = await prisma.$queryRaw<WithCustomer[]>`
+      SELECT 
+        id, name, image_url, email
+      FROM customers 
+      WHERE 
+        name LIKE ${filterCondition}
+        OR email LIKE ${filterCondition}
+      LIMIT ${ITEMS_PER_PAGE}
+      OFFSET ${offset};
+    `;
+    //  console.log(customers)
+   
+  //  console.log("pippoca ==>> " + mappedInvoices) 
+  return customers;
+
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch invoices.');
+  }
+}
+
 export async function fetchInvoicesPages(query: string) {
   try {
 
@@ -172,6 +212,33 @@ export async function fetchInvoicesPages(query: string) {
   }
 }
 
+export async function fetchCustomerPages(query: string) {
+  try {
+
+    // Preparação do filtro SQL
+    const filterCondition = query ? `%${query}%` : '%';
+
+    // Consulta para obter a contagem total de registros
+    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) AS count
+      FROM customers 
+      WHERE 
+        name LIKE ${filterCondition}
+        OR email LIKE ${filterCondition}
+    `;
+    // Pegando a contagem de registros
+    const totalRecords = Number(countResult[0].count);
+
+    // Calculando o número total de páginas
+    const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+
+    return totalPages;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch total number of customers.');
+  }
+}
+
 export async function fetchInvoiceById(id: number) {
   try {
     const invoice = await prisma.invoices.findUnique({
@@ -193,6 +260,25 @@ export async function fetchInvoiceById(id: number) {
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoice.');
+  }
+}
+
+export async function fetchCustomerById(id: number) {
+  try {
+
+    const customer = await prisma.customers.findUnique({
+      where: { id: Number(id) }
+    });
+
+    // Verifica se o cliente foi encontrado
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
+    return customer; // Retorna o primeiro resultado encontrado (caso exista)
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch customer.');
   }
 }
 

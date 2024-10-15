@@ -15,7 +15,16 @@ const FormSchema = z.object({
     date: z.date(),
 });
 
+const FormSchemaCustomer = z.object({
+  id: z.number().min(1,{ message: 'Please select a customer.'}),
+  name: z.string().min(1,{ message: 'Please enter with customer name.' }),
+  email: z.string().min(1,{ message: 'Please enter with customer e-mail.'}),
+  image_url: z.string().min(1,{ message: 'Please enter with customer picture path.'}),
+});
+
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
+const CreateCustomer = FormSchemaCustomer.omit({ id: true });
+const UpdateCustomer = FormSchemaCustomer.omit({ id: true });
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
  
 const prisma = new PrismaClient();
@@ -28,10 +37,18 @@ export type State = {
   };
   message?: string | null;
 };
- 
-// export async function createInvoice(prevState: State, formData: FormData) {
-//   // ...
-// }
+
+export type StateCustomer = {
+  // id: number;
+
+  errors?: {
+    name?: string[];
+    email?: string[];
+    image_url?: string[];
+  };
+  message?: string;
+};
+
 
 export async function createInvoice(prevState: State, formData: FormData) {
   
@@ -52,7 +69,6 @@ export async function createInvoice(prevState: State, formData: FormData) {
     };
   }
 
-  // const amountInCents = amount * 100;
   const {customerId, amount, status } = validatedFields.data;
   const date = new Date();
 
@@ -104,6 +120,41 @@ export async function updateInvoice(
   redirect('/dashboard/invoices');
 }
 
+export async function updateCustomer(
+  id: string,
+  prevState: StateCustomer,
+  formData: FormData,
+) {
+  const validatedFields = UpdateCustomer.safeParse({
+    id: formData.get('id'),
+    name: formData.get('name'),
+    email: formData.get('email'),
+    image_url: formData.get('image_url'),
+  });
+
+  console.log('entrei no updateCustomer')
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors || {},
+      message: 'Missing Fields. Failed to Update Invoice.',
+    };
+  }
+ 
+  const { name, email, image_url } = validatedFields.data;
+ 
+  try {
+    await prisma.$queryRaw`
+      UPDATE invoices
+      SET name = ${name}, email = ${email}, image_url = {image_url}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return {message: 'Database Error: Failed to Update Customer'}
+  }
+  revalidatePath('/dashboard/customers');
+  redirect('/dashboard/customers');
+}
+
 export async function deleteInvoice(id: string) {
   //  throw new Error('Failed to Delete Invoice!');
 
@@ -134,4 +185,45 @@ export async function authenticate(
     }
     throw error;
   }
+}
+
+export async function createCustomer(prevState: StateCustomer, formData: FormData) {
+  const validatedFields = CreateCustomer.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+    image_url: formData.get('image_url'),
+  });
+
+  // Se a validação do formulário falhar, retorna erros cedo.
+  if (!validatedFields.success) {
+    return {
+      errors: {
+        name: validatedFields.error.flatten().fieldErrors.name || [],
+        email: validatedFields.error.flatten().fieldErrors.email || [],
+        image_url: validatedFields.error.flatten().fieldErrors.image_url || [],
+      },
+      message: 'Missing Fields. Failed to Create Customer.',
+    };
+  }
+
+  const { name, email, image_url } = validatedFields.data;
+
+  try {
+    await prisma.$queryRaw`
+      INSERT INTO customers (name, email, image_url)
+      VALUES (${name}, ${email}, ${image_url})
+    `;
+    return {
+      errors: { name: [], email: [], image_url: [] }, // Sem erro após sucesso
+      message: 'Customer created successfully!', // Mensagem de sucesso
+    };
+  } catch (error) {
+    return {
+      errors: { name: [], email: [], image_url: [] }, // Sem erros específicos, apenas falha geral
+      message: 'Database Error: Failed to Create Customer', // Mensagem de erro genérica
+    };
+  }
+
+  revalidatePath('/dashbard/customers')
+  redirect('/dashboard/customers')
 }
