@@ -132,7 +132,6 @@ export async function updateCustomer(
     image_url: formData.get('image_url'),
   });
 
-  console.log('entrei no updateCustomer')
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors || {},
@@ -141,14 +140,17 @@ export async function updateCustomer(
   }
  
   const { name, email, image_url } = validatedFields.data;
- 
+  
+  console.log( name, email, image_url )
+  
   try {
-    await prisma.$queryRaw`
-      UPDATE invoices
-      SET name = ${name}, email = ${email}, image_url = {image_url}
-      WHERE id = ${id}
-    `;
-  } catch (error) {
+
+      await prisma.$queryRaw`
+        UPDATE customers
+        SET name = ${name}, email = ${email}, image_url = ${image_url}
+        WHERE id = ${id}`;
+
+} catch (error) {
     return {message: 'Database Error: Failed to Update Customer'}
   }
   revalidatePath('/dashboard/customers');
