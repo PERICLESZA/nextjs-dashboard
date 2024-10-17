@@ -170,6 +170,20 @@ export async function deleteInvoice(id: string) {
   }
 }
 
+export async function deleteCustomer(id: string) {
+  //  throw new Error('Failed to Delete Customer!');
+
+  try{
+    await prisma.$queryRaw`
+      DELETE FROM customers WHERE id = ${id}`;
+      revalidatePath('/dashboard/customers');
+      return{message: 'Deleted'};
+  } catch (error) {
+    return {message: 'Database Error: Failes to Update Customer'}
+  }
+}
+
+
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData,

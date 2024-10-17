@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { UpdateCustomer, DeleteInvoice } from '@/app/ui/customers/buttons';
+import { UpdateCustomer, DeleteCustomer } from '@/app/ui/customers/buttons';
 
 interface CustomersTableProps {
   query: string;
@@ -78,8 +78,7 @@ export default function CustomerTable({
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
                     <div className="flex justify-end gap-3">
                       <UpdateCustomer id={customer.id} />
-                      {customer.id}
-                      <DeleteInvoice id={customer.id.toString()} />
+                      <DeleteCustomer id={customer.id.toString()} />
                     </div>
                   </td>
                 </tr>

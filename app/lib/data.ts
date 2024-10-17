@@ -333,3 +333,63 @@ export async function fetchFilteredCustomers(query: string) {
   }
 }
  
+export async function fetchCityPages(query: string) {
+  try {
+
+    // Preparação do filtro SQL
+    const filterCondition = query ? `%${query}%` : '%';
+
+    // Consulta para obter a contagem total de registros
+    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) AS city
+      FROM city 
+      WHERE 
+        name_city LIKE ${filterCondition}
+    `;
+    // Pegando a contagem de registros
+    const totalRecords = Number(countResult[0].count);
+
+    // Calculando o número total de páginas
+    const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+
+    return totalPages;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch total number of cities.');
+  }
+}
+
+type WithCity = {
+  idcity: number;
+  name_city: string;
+};
+
+export async function fetchFilteredCity(query: string, currentPage: number) {
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  // Preparação do filtro SQL
+  const filterCondition = query
+    ? `%${query}%`
+    : '%';
+
+  try {
+    // Consulta SQL personalizada
+    const city = await prisma.$queryRaw<WithCity[]>`
+      SELECT 
+        idcity, name_city
+      FROM city 
+      WHERE 
+        name LIKE ${filterCondition}
+      LIMIT ${ITEMS_PER_PAGE}
+      OFFSET ${offset};
+    `;
+    //  console.log(customers)
+   
+  //  console.log("pippoca ==>> " + mappedInvoices) 
+  return city;
+
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch citues.');
+  }
+}

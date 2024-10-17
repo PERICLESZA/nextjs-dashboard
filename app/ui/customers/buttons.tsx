@@ -1,7 +1,7 @@
 "use client"
 import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { deleteInvoice } from '@/app/lib/actions';
+import { deleteInvoice, deleteCustomer } from '@/app/lib/actions';
 
 export function CreateInvoice() {
   return (
@@ -40,15 +40,15 @@ export function UpdateCustomer({ id }: { id: string }) {
 }
 
 
-export function DeleteInvoice({ id }: { id: string }) {
+export function DeleteCustomer({ id }: { id: string }) {
   const handleDelete = async (event: React.FormEvent) => {
     event.preventDefault();
     
-    const confirmed = window.confirm("Are you sure you want to delete this invoice?");
+    const confirmed = window.confirm("Are you sure you want to delete?");
     
     if (confirmed) {
       try {
-        await deleteInvoice(id);
+        await deleteCustomer(id);
       } catch (error) {
         console.error("Failed to delete invoice:", error);
       }
