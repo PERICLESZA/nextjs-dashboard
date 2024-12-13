@@ -170,7 +170,7 @@ model login {
   login   String  @unique(map: "login") @db.VarChar(40)
   senha   String? @db.VarChar(80)
   nome    String? @db.VarChar(40)
-  email   String? @unique(map: "email") @db.VarChar(40) 
+  email   String? @db.VarChar(40)
   perfil  String? @db.Char(1)
   active  String? @db.Char(1)
 }
